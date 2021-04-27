@@ -1,0 +1,17 @@
+{
+  "name": "resourcy-slackbot",
+  "version": "1.0.0",
+  "description": "A Slackbot that caters a list of resources based on meeting type.",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "discord.js": "^12.5.3",
+    "dotenv": "^8.2.0"
+  }
+}
