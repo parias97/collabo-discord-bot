@@ -1,7 +1,7 @@
 {
-  "name": "resourcy-slackbot",
+  "name": "resourcy-bot",
   "version": "1.0.0",
-  "description": "A Slackbot that caters a list of resources based on meeting type.",
+  "description": "A Discord bot that caters a list of resources based on meeting type.",
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js",

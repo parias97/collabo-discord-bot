@@ -10,6 +10,8 @@ const meetingLinks = {
   study: ["https://quizlet.com", "https://docs.google.com/", "https://evernote.com/"]
 }
 
+const commands = ["resources", "commands"];
+
 client.on("message", function(message) {
   if(message.author.bot) return;
   if(!message.content.startsWith(prefix)) return;
@@ -18,12 +20,24 @@ client.on("message", function(message) {
   const args = commandBody.split(' ');
   const command = args.shift().toLowerCase();
 
-  if(command === "resources"){
+  if(commands === "resources"){
     const meetingType = args[0];
     const links = meetingLinks[meetingType];
     links.forEach(element => {
       message.reply(element);
     });
+
+    message.guild.channels.create(meetingType, {
+      type: 'text'
+    });
+
+    if(message.guild.channels.cache.get(meetingType.toLowerCase) === undefined){
+      message.channel.send(`${meetingType} channel created!`);
+    } else {
+      return;
+    }
+  } else if(command === "commands"){
+      message.reply(commands);
   }
 });
 
