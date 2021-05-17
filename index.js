@@ -50,14 +50,13 @@ client.on("message", async message => {
       message.reply(element);
     });
 
-    // Check if meetingType channel exists
-    message.guild.channels.create(meetingType, {
-      type: 'text'
-    });
-
-    if(message.guild.channels.cache.get(meetingType.toLowerCase) === undefined){
-      message.channel.send(`${meetingType} channel created!`);
+    if(message.guild.channels.cache.find(channel => channel.name === meetingType)){
+      message.channel.send(`Check out the ${meetingType}!`);
     } else {
+      // Check if meetingType channel exists
+      message.guild.channels.create(meetingType, {
+        type: 'text'
+      });
       return;
     }
   } else if(command === "commands"){  
