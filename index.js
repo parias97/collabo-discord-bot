@@ -165,6 +165,7 @@ client.on("message", async message => {
   await connect(process.env.MONGO_KEY,{
     useNewUrlParser: true,
     useFindAndModify: false,
+    useUnifiedTopology: true
   });
 
   return client.login(process.env.BOT_TOKEN);
