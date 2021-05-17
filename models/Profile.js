@@ -1,5 +1,4 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const {Schema, model} = require('mongoose');
 
 const Profile = Schema({
     id: {
@@ -20,5 +19,4 @@ const Profile = Schema({
     }
 });
 
-let profile = mongoose.model('profile', profile);
-module.exports = profile;
+module.exports = model("Profile", Profile);
