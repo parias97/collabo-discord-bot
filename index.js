@@ -2,6 +2,8 @@ const Discord = require('discord.js');
 require('dotenv').config();
 
 const client = new Discord.Client();
+const Profile = require('./models/Profile');
+const {connect} = require('mongoose');
 const prefix = "!";
 let interests = [];
 let freeTime = [];
@@ -16,14 +18,14 @@ const meetingLinks = {
 
 const commands = ["resources", "commands", "profile"];
 
-const createUser = (userName, interests, freeTime)  => {
-  return { userName: userName, interests: [...interests], freeTime: [...freeTime]};
+const createUser = (id, userName, interests, freeTime)  => {
+  return { id: id, userName: userName, interests: [...interests], freeTime: [...freeTime]};
 }
 
 // For testing
-let user = createUser("test1", ["web dev", "mobile dev", "programming"], ["run", "code", "sleep"]);
+let user = createUser(11,"test1", ["web dev", "mobile dev", "programming"], ["run", "code", "sleep"]);
 users.push(user);
-user = createUser("test2", ["fashion", "space exploration", "programming"], ["running", "code", "reading"]);
+user = createUser(12, "test2", ["fashion", "space exploration", "programming"], ["running", "code", "reading"]);
 users.push(user);
 
 
@@ -118,7 +120,16 @@ client.on("message", async message => {
             message.author.send('Timed out waiting for response.' + collected);
         });
 
-        let user = createUser(message.author.username, interests, freeTime);
+        const profile = new Profile({
+          id: message.author.id,
+          userName: message.author.username,
+          interests: interests,
+          freeTime: freeTime
+        });
+
+        await profile.save();
+
+        let user = createUser(message.author.id, message.author.username, interests, freeTime);
         users.push(user);
         console.log(users);
       } else if(args[0] === "get"){
@@ -152,4 +163,10 @@ client.on("message", async message => {
   }
 });
 
-client.login(process.env.BOT_TOKEN);
+(async () => {
+  await connect("mongodb+srv://dblions:jBeapegdC6AQOvDf@collabo-cluster.sujat.mongodb.net/profiles?retryWrites=true&w=majority",{
+    useNewUrlParser: true,
+    useFindAndModify: false,
+  });
+  return client.login(process.env.BOT_TOKEN);
+})
