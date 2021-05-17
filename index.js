@@ -65,6 +65,12 @@ client.on("message", async message => {
   } else if(command === "profile"){
       if(args[0] === "set"){
 
+        const req = await Profile.findOne({userName: message.author.username});
+
+        if(req){
+          return message.channel.send("You already have a profile");
+        }
+
         // Check if message is being sent to author
         let filter = m => m.author.id === message.author.id;
 
