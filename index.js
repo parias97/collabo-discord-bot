@@ -46,12 +46,13 @@ client.on("message", async message => {
   if(command === "resources"){
     const meetingType = args[0];
     const links = meetingLinks[meetingType];
-    const listOfLinksMsg = new Discord.MessageEmbed()
+    let listOfLinksMsg = new Discord.MessageEmbed()
       .setColor('#0099ff')
       .setTitle(`Resources for your ${meetingType} meeting`)
       .addField('Resources', links, true)
       .setTimeStamp();
-    message.channel.send(listOfLinksMsg);
+
+    message.reply(listOfLinksMsg);
 
     // Check if a channel for meetingType exists, if not create it.
     if(message.guild.channels.cache.find(channel => channel.name === meetingType)){
