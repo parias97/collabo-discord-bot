@@ -43,7 +43,7 @@ client.on("message", async message => {
   const args = commandBody.split(' ');
   const command = args.shift().toLowerCase();
 
-  if(commands === "resources"){
+  if(command === "resources"){
     const meetingType = args[0];
     const links = meetingLinks[meetingType];
     links.forEach(element => {
@@ -60,8 +60,18 @@ client.on("message", async message => {
     } else {
       return;
     }
-  } else if(command === "commands"){
-      message.reply(commands);
+  } else if(command === "commands"){  
+      // Embeds for formatted message. Source: https://discordjs.guide/popular-topics/embeds.html
+      let embeddedMsg = new Discord.MessageEmbed()
+        .setColor('#0099ff')
+        .setTitle("Collabo Commands")
+        .addFields(
+          { name: 'Commands', value: commands, inline: true },
+          { name: 'Example', value: ['!resources brainstorming', '!commands', '!profile set/get [USERNAME] (only include username if using get command)'], inline: true },
+        )
+        .setTimestamp();
+
+      return message.channel.send(embeddedMsg);
   } else if(command === "profile"){
       if(args[0] === "set"){
 
