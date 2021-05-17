@@ -7,8 +7,6 @@ const {connect} = require('mongoose');
 const prefix = "!";
 let interests = [];
 let freeTime = [];
-let users = [];
-
 
 const meetingLinks = {
   happyhour: ["https://kahoot.it/","https://icebreaker.video/"],
@@ -18,16 +16,9 @@ const meetingLinks = {
 
 const commands = ["resources", "commands", "profile"];
 
-const createUser = (id, userName, interests, freeTime)  => {
-  return { id: id, userName: userName, interests: [...interests], freeTime: [...freeTime]};
+const createUser = (userName, interests, freeTime)  => {
+  return {userName: userName, interests: [...interests], freeTime: [...freeTime]};
 }
-
-// For testing
-let user = createUser(11,"test1", ["web dev", "mobile dev", "programming"], ["run", "code", "sleep"]);
-users.push(user);
-user = createUser(12, "test2", ["fashion", "space exploration", "programming"], ["running", "code", "reading"]);
-users.push(user);
-
 
 const profileTemplate = (user) => {
   
@@ -92,10 +83,10 @@ client.on("message", async message => {
               interests.push(responses[i].content);
             }
             message.author.send("Thanks for the reply!");
-            console.log(interests);
+            //console.log(interests);
           })
           .catch(collected => {
-              console.log(message);
+              //console.log(message);
               message.author.send('Timed out waiting for response.' + collected);
           });
         
@@ -129,12 +120,11 @@ client.on("message", async message => {
 
         await profile.save();
 
-        let user = createUser(message.author.id, message.author.username, interests, freeTime);
+        let user = createUser(message.author.username, interests, freeTime);
         users.push(user);
-        console.log(users);
+        //console.log(users);
       } else if(args[0] === "get"){
 
-        let found = false;
         let userName = '';
         // Some usernames may have spaces therefore since this is an argument array
         // the spaces are not taking into account. To counter this, when a space is reached
@@ -146,27 +136,36 @@ client.on("message", async message => {
           }
         }
 
-        // Iterate through users and find the user that is being requested
-        users.forEach(user => {
-          if(user.userName === userName){
-            found = true;
-            message.channel.send(profileTemplate(user));
-          }
-        })
-
-        if(!found){
-          message.channel.send(userName + " doesn't have a profile.");
+        const req = await Profile.findOne({userName: userName});
+        //console.log(req.userName);
+        if(!req){
+          return message.channel.send(userName + "'s profile doesn't exist");
+        } else {
+          let user = createUser(req.userName, req.interests, req.freeTime);
+          message.channel.send(profileTemplate(user))
         }
+        
 
-        console.log(userName);
+        // Iterate through users and find the user that is being requested
+        // users.forEach(user => {
+        //   if(user.userName === userName){
+        //     found = true;
+        //     message.channel.send(profileTemplate(user));
+        //   }
+        // })
+
+        // if(!found){
+        //   message.channel.send(userName + " doesn't have a profile.");
+        // }
     }
   }
 });
 
 (async () => {
-  await connect("mongodb+srv://dblions:jBeapegdC6AQOvDf@collabo-cluster.sujat.mongodb.net/profiles?retryWrites=true&w=majority",{
+  await connect(process.env.MONGO_KEY,{
     useNewUrlParser: true,
     useFindAndModify: false,
   });
+
   return client.login(process.env.BOT_TOKEN);
-})
+})();

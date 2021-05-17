@@ -4,6 +4,7 @@
   "description": "A Discord bot that caters a list of resources based on meeting type.",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon index.js",
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
