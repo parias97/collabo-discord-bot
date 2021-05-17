@@ -50,7 +50,7 @@ client.on("message", async message => {
       .setColor('#0099ff')
       .setTitle(`Resources for your ${meetingType} meeting`)
       .addField('Resources', links, true)
-      .setTimeStamp();
+      .setTimestamp();
 
     message.reply(listOfLinksMsg);
 
