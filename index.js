@@ -123,14 +123,31 @@ client.on("message", async message => {
         console.log(users);
       } else if(args[0] === "get"){
 
-          // Iterate through users and find the user that is being requested
-          users.forEach(user => {
-            if(user.userName === userName){
-              message.channel.send(profileTemplate(user));
-            }
-          })
+        let found = false;
+        let userName = '';
+        // Some usernames may have spaces therefore since this is an argument array
+        // the spaces are not taking into account. To counter this, when a space is reached
+        // after the first argument following the 'get' command, a space is added to the userName string.
+        for(let i = 1; i < args.length; i++){
+          userName += args[i];
+          if(i != args.length - 1){
+            userName += " ";
+          }
+        }
 
-          console.log(userName);
+        // Iterate through users and find the user that is being requested
+        users.forEach(user => {
+          if(user.userName === userName){
+            found = true;
+            message.channel.send(profileTemplate(user));
+          }
+        })
+
+        if(!found){
+          message.channel.send(userName + " doesn't have a profile.");
+        }
+
+        console.log(userName);
     }
   }
 });
