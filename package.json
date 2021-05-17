@@ -1,5 +1,5 @@
 {
-  "name": "resourcy-bot",
+  "name": "collabo-bot",
   "version": "1.0.0",
   "description": "A Discord bot that caters a list of resources based on meeting type.",
   "main": "index.js",
