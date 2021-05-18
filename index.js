@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-require('google_search_results');
+require('google-search-results-nodejs');
 require('dotenv').config();
 
 const client = new Discord.Client();
