@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
-const GoogleSearchAPI = require('google-search-results-nodejs');
-const search = new GoogleSearchAPI.GoogleSearch()
+//const GoogleSearchAPI = require('google-search-results-nodejs');
+//const search = new GoogleSearchAPI.GoogleSearch()
 require('dotenv').config();
 
 const client = new Discord.Client();
@@ -49,29 +49,29 @@ client.on("message", async message => {
     const meetingType = args[0];
     const links = meetingLinks[meetingType];
 
-    let params = {
-      engine: "google",
-      q: `virtual ${meetingType} tools`,
-      google_domain: "google.com",
-      gl: "us",
-      hl: "en",
-      num: "5",
-      tbs: "app",
-      api_key: process.env.GOOGLE_API_KEY
-    }
+    // let params = {
+    //   engine: "google",
+    //   q: `virtual ${meetingType} tools`,
+    //   google_domain: "google.com",
+    //   gl: "us",
+    //   hl: "en",
+    //   num: "5",
+    //   tbs: "app",
+    //   api_key: process.env.GOOGLE_API_KEY
+    // }
     
-    let results = [];
+    // let results = [];
 
-    let callback = (data) => {
-      results = [...data.organic_results];
-    }
+    // let callback = (data) => {
+    //   results = [...data.organic_results];
+    // }
 
-    search.json(params, callback);
+    //search.json(params, callback);
 
     let listOfLinksMsg = new Discord.MessageEmbed()
       .setColor('#0099ff')
       .setTitle(`Resources for your ${meetingType} meeting`)
-      .addField('Resources', results, true)
+      .addField('Resources', links, true)
       .setTimestamp();
 
     message.reply(listOfLinksMsg);
