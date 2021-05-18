@@ -1,22 +1,24 @@
 const Discord = require('discord.js');
-//const GoogleSearchAPI = require('google-search-results-nodejs');
-//const search = new GoogleSearchAPI.GoogleSearch()
-require('dotenv').config();
-
+const GoogleSearchAPI = require('google-search-results-nodejs');
+const search = new GoogleSearchAPI.GoogleSearch();
+const fetch = require("node-fetch");
 const client = new Discord.Client();
 const Profile = require('./models/Profile');
 const {connect} = require('mongoose');
+require('dotenv').config();
+
 const prefix = "!";
 let interests = [];
 let freeTime = [];
 
-const meetingLinks = {
-  happyhour: ["https://kahoot.it/","https://icebreaker.video/"],
-  brainstorming: ["https://miro.com/", "https://figma.com"],
-  study: ["https://quizlet.com", "https://docs.google.com/", "https://evernote.com/"]
-}
+// Hard-coded meeting links for specific meeting types
+// const meetingLinks = {
+//   happyhour: ["https://kahoot.it/","https://icebreaker.video/"],
+//   brainstorming: ["https://miro.com/", "https://figma.com"],
+//   study: ["https://quizlet.com", "https://docs.google.com/", "https://evernote.com/"]
+// }
 
-const commands = ["resources", "commands", "profile"];
+const commands = ["resources", "commands", "profile", "motivateme"];
 
 const createUser = (userName, interests, freeTime)  => {
   return {userName: userName, interests: [...interests], freeTime: [...freeTime]};
@@ -47,34 +49,42 @@ client.on("message", async message => {
 
   if(command === "resources"){
     const meetingType = args[0];
-    const links = meetingLinks[meetingType];
 
-    // let params = {
-    //   engine: "google",
-    //   q: `virtual ${meetingType} tools`,
-    //   google_domain: "google.com",
-    //   gl: "us",
-    //   hl: "en",
-    //   num: "5",
-    //   tbs: "app",
-    //   api_key: process.env.GOOGLE_API_KEY
-    // }
+    if(meetingType === undefined){
+      return message.channel.send("You must enter a type of meeting.");
+    }
+
+    //const links = meetingLinks[meetingType];
+
+    let params = {
+      engine: "google",
+      q: `virtual ${meetingType} tools`,
+      google_domain: "google.com",
+      gl: "us",
+      hl: "en",
+      num: "5",
+      tbs: "app",
+      safe: "active",
+      api_key: process.env.GOOGLE_API_KEY
+    }
     
-    // let results = [];
+    let callback = (data) => {
+      let jsonObjects = [...data.organic_results];
+      let results = [];
+      for(let i = 0; i < jsonObjects.length; i++){
+        results[i] = jsonObjects[i].link;
+      }
+      
+      let listOfLinksMsg = new Discord.MessageEmbed()
+        .setColor('#0099ff')
+        .setTitle(`Resources for your ${meetingType} meeting`)
+        .addField('Resources', results, true)
+        .setTimestamp();
 
-    // let callback = (data) => {
-    //   results = [...data.organic_results];
-    // }
+      message.reply(listOfLinksMsg);
+    }
 
-    //search.json(params, callback);
-
-    let listOfLinksMsg = new Discord.MessageEmbed()
-      .setColor('#0099ff')
-      .setTitle(`Resources for your ${meetingType} meeting`)
-      .addField('Resources', links, true)
-      .setTimestamp();
-
-    message.reply(listOfLinksMsg);
+    search.json(params, callback);
 
     // Check if a channel for meetingType exists, if not create it.
     if(message.guild.channels.cache.find(channel => channel.name === meetingType)){
@@ -83,6 +93,7 @@ client.on("message", async message => {
       message.guild.channels.create(meetingType, {
         type: 'text'
       });
+      message.channel.send(`${meetingType} channel has been created!`);
       return;
     }
   } else if(command === "commands"){  
@@ -92,13 +103,13 @@ client.on("message", async message => {
         .setTitle("Collabo Commands")
         .addFields(
           { name: 'Commands', value: commands, inline: true },
-          { name: 'Example', value: ['!resources brainstorming', '!commands', '!profile set/get [USERNAME] (only include username if using get command)'], inline: true },
+          { name: 'Example', value: ['!resources brainstorming', '!commands', '!profile create/get [USERNAME] (only include username if using get command)','!motivateme'], inline: true },
         )
         .setTimestamp();
 
       return message.channel.send(embeddedMsg);
   } else if(command === "profile"){
-      if(args[0] === "set"){
+      if(args[0] === "create"){
 
         const req = await Profile.findOne({userName: message.author.username});
 
@@ -131,7 +142,6 @@ client.on("message", async message => {
               message.author.send('Timed out waiting for response.' + collected);
           });
         
-
       await message.author.send("What do you like to do in your free time? Please enter 3.");
 
       await message.author.dmChannel.awaitMessages(filter, {
@@ -185,20 +195,15 @@ client.on("message", async message => {
           let user = createUser(req.userName, req.interests, req.freeTime);
           message.channel.send(profileTemplate(user))
         }
-        
 
-        // Iterate through users and find the user that is being requested
-        // users.forEach(user => {
-        //   if(user.userName === userName){
-        //     found = true;
-        //     message.channel.send(profileTemplate(user));
-        //   }
-        // })
-
-        // if(!found){
-        //   message.channel.send(userName + " doesn't have a profile.");
-        // }
+    } else {
+      message.channel.send("You must enter a command along with 'profile'. Use 'create' to create a profile and 'get' to show a user profile.");
     }
+  } else if(command === "motivateme"){
+    // Fetch a random motivational/inspirational quote from the api
+    fetch("https://zenquotes.io/api/random/")
+      .then(response => response.json())
+      .then(data => message.author.send(data[0].q));
   }
 });
 
