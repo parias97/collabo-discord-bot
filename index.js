@@ -1,5 +1,6 @@
 const Discord = require('discord.js');
-const GoogleSearch = require('google-search-results-nodejs');
+const GoogleSearchAPI = require('google-search-results-nodejs');
+const search = new GoogleSearchAPI.GoogleSearch()
 require('dotenv').config();
 
 const client = new Discord.Client();
@@ -59,7 +60,11 @@ client.on("message", async message => {
       api_key: process.env.GOOGLE_API_KEY
     }
 
-    let search = GoogleSearch.new(params)
+    let callback = (data) => {
+      message.channel.reply(data.organic_results);
+    }
+
+    search.json(params, callback);
 
     let listOfLinksMsg = new Discord.MessageEmbed()
       .setColor('#0099ff')
