@@ -59,9 +59,11 @@ client.on("message", async message => {
       tbs: "app",
       api_key: process.env.GOOGLE_API_KEY
     }
+    
+    let results = [];
 
     let callback = (data) => {
-      message.channel.reply(data.organic_results);
+      results = [...data.organic_results];
     }
 
     search.json(params, callback);
@@ -69,7 +71,7 @@ client.on("message", async message => {
     let listOfLinksMsg = new Discord.MessageEmbed()
       .setColor('#0099ff')
       .setTitle(`Resources for your ${meetingType} meeting`)
-      .addField('Resources', search.organic_results, true)
+      .addField('Resources', results, true)
       .setTimestamp();
 
     message.reply(listOfLinksMsg);
