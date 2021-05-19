@@ -72,7 +72,7 @@ client.on("message", async message => {
       let jsonObjects = [...data.organic_results];
       let results = [];
       for(let i = 0; i < jsonObjects.length; i++){
-        results[i] = jsonObjects[i].link;
+        results[i] = "[" + jsonObjects[i].title + "](" + jsonObjects[i].link + ")";
       }
       
       let listOfLinksMsg = new Discord.MessageEmbed()
@@ -111,7 +111,7 @@ client.on("message", async message => {
   } else if(command === "profile"){
       if(args[0] === "create"){
 
-        const req = await Profile.findOne({userName: message.author.username});
+        const req = await Profile.findOne({userName: message.author.username.toLowerCase()});
 
         if(req){
           return message.channel.send("You already have a profile");
@@ -163,16 +163,15 @@ client.on("message", async message => {
         });
 
         const profile = new Profile({
-          id: message.author.id,
-          userName: message.author.username,
+          userName: message.author.username.toLowerCase(),
           interests: interests,
           freeTime: freeTime
         });
 
         await profile.save();
 
-        let user = createUser(message.author.username, interests, freeTime);
-        users.push(user);
+        // let user = createUser(message.author.username, interests, freeTime);
+        // users.push(user);
         //console.log(users);
       } else if(args[0] === "get"){
 
@@ -187,7 +186,7 @@ client.on("message", async message => {
           }
         }
 
-        const req = await Profile.findOne({userName: userName});
+        const req = await Profile.findOne({userName: userName.toLowerCase()});
         //console.log(req.userName);
         if(!req){
           return message.channel.send(userName + "'s profile doesn't exist");
@@ -207,6 +206,7 @@ client.on("message", async message => {
   }
 });
 
+// Connect to database and wake up bot
 (async () => {
   await connect(process.env.MONGO_KEY,{
     useNewUrlParser: true,
