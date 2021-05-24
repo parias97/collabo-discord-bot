@@ -4,17 +4,19 @@ const search = new GoogleSearchAPI.GoogleSearch();
 const fetch = require("node-fetch");
 const client = new Discord.Client();
 const Profile = require('./models/Profile');
+const ytdl = require('ytdl-core');
 const {connect} = require('mongoose');
 require('dotenv').config();
 
 const prefix = "!";
 let interests = [];
 let freeTime = [];
+const queue = new Map();
 
-// Hard-coded meeting links for specific meeting types
+//Hard-coded meeting links for specific meeting types
 // const meetingLinks = {
 //   happyhour: ["https://kahoot.it/","https://icebreaker.video/"],
-//   brainstorming: ["https://miro.com/", "https://figma.com"],
+//   brainstorming: ["https://miro.com/", "https://figma.com", "https://lucidspark.com/", "https://conceptboard.com/" ],
 //   study: ["https://quizlet.com", "https://docs.google.com/", "https://evernote.com/"]
 // }
 
@@ -46,56 +48,61 @@ client.on("message", async message => {
   const commandBody = message.content.slice(prefix.length);
   const args = commandBody.split(' ');
   const command = args.shift().toLowerCase();
+  const serverQueue = queue.get(message.guild.id);
 
   if(command === "resources"){
     const meetingType = args[0];
 
     if(meetingType === undefined){
       return message.channel.send("You must enter a type of meeting.");
-    }
-
-    //const links = meetingLinks[meetingType];
-
-    let params = {
-      engine: "google",
-      q: `virtual ${meetingType} tools`,
-      google_domain: "google.com",
-      gl: "us",
-      hl: "en",
-      num: "5",
-      tbs: "app",
-      safe: "active",
-      api_key: process.env.GOOGLE_API_KEY
-    }
-    
-    let callback = (data) => {
-      let jsonObjects = [...data.organic_results];
-      let results = [];
-      for(let i = 0; i < jsonObjects.length; i++){
-        results[i] = "[" + jsonObjects[i].title + "](" + jsonObjects[i].link + ")";
-      }
-      
-      let listOfLinksMsg = new Discord.MessageEmbed()
-        .setColor('#0099ff')
-        .setTitle(`Resources for your ${meetingType} meeting`)
-        .addField('Resources', results, true)
-        .setTimestamp();
-
-      message.reply(listOfLinksMsg);
-    }
-
-    search.json(params, callback);
-
-    // Check if a channel for meetingType exists, if not create it.
-    if(message.guild.channels.cache.find(channel => channel.name === meetingType)){
-      message.channel.send(`Check out the ${meetingType} channel!`);
     } else {
-      message.guild.channels.create(meetingType, {
-        type: 'text'
-      });
-      message.channel.send(`${meetingType} channel has been created!`);
-      return;
+
+      //const links = meetingLinks[meetingType];
+
+      // Check if a channel for meetingType exists, if not create it.
+      if(message.guild.channels.cache.find(channel => channel.name === meetingType)){
+        message.channel.send(`Check out the ${meetingType} channel!`);
+      } else {
+        await message.guild.channels.create(meetingType, {
+          type: 'text'
+        });
+        message.channel.send(`${meetingType} channel has been created!`);
+      }
+
+      let params = {
+        engine: "google",
+        q: `virtual ${meetingType} tools`,
+        google_domain: "google.com",
+        gl: "us",
+        hl: "en",
+        num: "5",
+        tbs: "app",
+        safe: "active",
+        api_key: process.env.GOOGLE_API_KEY
+      }
+
+      let callback = (data) => {
+        let jsonObjects = [...data.organic_results];
+        let results = [];
+        console.log("testing")
+        for(let i = 0; i < jsonObjects.length; i++){
+          results[i] = "[" + jsonObjects[i].title + "](" + jsonObjects[i].link + ")";
+        }
+        
+        let listOfLinksMsg = new Discord.MessageEmbed()
+          .setColor('#0099ff')
+          .setTitle(`Resources for your ${meetingType} meeting`)
+          .addField('Resources', results, true)
+          .setTimestamp();
+
+        message.guild.channels.cache.find(channel => channel.name === `${meetingType}`).send(listOfLinksMsg);
+
+      }
+
+      search.json(params, callback);      
+
     }
+  
   } else if(command === "commands"){  
       // Embeds for formatted message. Source: https://discordjs.guide/popular-topics/embeds.html
       let embeddedMsg = new Discord.MessageEmbed()
@@ -203,8 +210,87 @@ client.on("message", async message => {
     fetch("https://zenquotes.io/api/random/")
       .then(response => response.json())
       .then(data => message.author.send(data[0].q));
+  } else if(command === "music"){  
+      if(args[0] === "play"){
+        args.shift();
+        execute(message, args, serverQueue);
+      }
   }
 });
+
+// Source: https://gabrieltanner.org/blog/dicord-music-bot
+async function execute(message, url, serverQueue){
+  const args = [...url];
+  const voiceChannel = message.member.voice.channel;
+
+  if (!voiceChannel){
+    return message.channel.send("You need to be in a voice channel to play music!");
+  }
+
+  const permissions = voiceChannel.permissionsFor(message.client.user);
+
+  if(!permissions.has("CONNECT") || !permissions.has("SPEAK")){
+    return message.channel.send("I need the permissions to join and speak in your voice channel!");
+  }
+
+  const songInfo = await ytdl.getInfo(args[0]);
+  console.log(songInfo);
+  const song = {
+    title: songInfo.videoDetails.title,
+    url: songInfo.videoDetails.video_url,
+  };
+
+
+  if(!serverQueue) {
+    // Creating the queue contract
+    const queueContract = {
+      textChannel: message.channel,
+      voiceChannel: voiceChannel,
+      connection: null,
+      songs: [],
+      volume: 5,
+      playing: true,
+    };
+  
+    // Setting the queue contract
+    queue.set(message.guild.id, queueContract);
+    queueContract.songs.push(song);
+
+    // Try to join the voicechat and save our connection into our object
+    try {
+      let connection = await voiceChannel.join();
+      queueContract.connection = connection;
+      play(message.guild, queueContract.songs[0]);
+    } catch (err) {
+      console.log(err);
+      queue.delete(message.guild.id);
+      return message.channel.send(err);
+    }
+  } else {
+    serverQueue.songs.push(song);
+    return message.channel.send(`${song.title} has been added to the queue!`);
+  }
+}
+
+function play(guild, song){
+  const serverQueue = queue.get(guild.id);
+  if(!song){
+    serverQueue.voiceChannel.leave();
+    queue.delete(guild.id);
+    return;
+  }
+
+  const dispatcher = serverQueue.connection
+    .play(ytdl(song.url))
+    .on("finish", () => {
+      serverQueue.songs.shift();
+      play(guild, serverQueue.songs[0]);
+    })
+    .on("error", error => console.error(error));
+
+  dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+  serverQueue.textChannel.send(`Start playing: **${song.title}**`);
+}
 
 // Connect to database and wake up bot
 (async () => {
