@@ -14,11 +14,11 @@ let freeTime = [];
 const queue = new Map();
 
 //Hard-coded meeting links for specific meeting types
-// const meetingLinks = {
-//   happyhour: ["https://kahoot.it/","https://icebreaker.video/"],
-//   brainstorming: ["https://miro.com/", "https://figma.com", "https://lucidspark.com/", "https://conceptboard.com/" ],
-//   study: ["https://quizlet.com", "https://docs.google.com/", "https://evernote.com/"]
-// }
+const meetingLinks = {
+  happyhour: ["https://kahoot.it/","https://icebreaker.video/"],
+  brainstorming: ["https://miro.com/", "https://figma.com", "https://lucidspark.com/", "https://conceptboard.com/" ],
+  study: ["https://quizlet.com", "https://docs.google.com/", "https://evernote.com/"]
+}
 
 const commands = ["resources", "commands", "profile", "motivateme"];
 
@@ -110,7 +110,7 @@ client.on("message", async message => {
         .setTitle("Collabo Commands")
         .addFields(
           { name: 'Commands', value: commands, inline: true },
-          { name: 'Example', value: ['!resources brainstorming', '!commands', '!profile create/get [USERNAME] (only include username if using get command)','!motivateme'], inline: true },
+          { name: 'Example', value: ['!resources [MEETING_TYPE]', '!commands', '!profile create/get [USERNAME] (only include username if using get command)','!motivateme'], inline: true },
         )
         .setTimestamp();
 
@@ -207,9 +207,13 @@ client.on("message", async message => {
     }
   } else if(command === "motivateme"){
     // Fetch a random motivational/inspirational quote from the api
-    fetch("https://zenquotes.io/api/random/")
-      .then(response => response.json())
-      .then(data => message.author.send(data[0].q));
+      fetch("https://api.forismatic.com/api/1.0/?method=getQuote&lang=en&format=json&json=?")
+        .then(response => response.json())
+        .then(data => message.author.send(data.quoteText))
+        .catch(error => {
+          console.log("There has been a problem with this fetch operation: ", error)
+        });
+
   } else if(command === "music"){  
       if(args[0] === "play"){
         args.shift();
@@ -268,7 +272,7 @@ async function execute(message, url, serverQueue){
     }
   } else {
     serverQueue.songs.push(song);
-    return message.channel.send(`${song.title} has been added to the queue!`);
+    return message.channel.send(`**${song.title}** has been added to the queue!`);
   }
 }
 
@@ -289,7 +293,7 @@ function play(guild, song){
     .on("error", error => console.error(error));
 
   dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-  serverQueue.textChannel.send(`Start playing: **${song.title}**`);
+  serverQueue.textChannel.send(`**${song.title}** has started playing!`);
 }
 
 // Connect to database and wake up bot
