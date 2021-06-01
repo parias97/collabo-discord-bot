@@ -98,6 +98,15 @@ client.on("message", async message => {
         message.guild.channels.cache.find(channel => channel.name === `${meetingType}`).send(listOfLinksMsg);
 
       }
+      // let listOfLinksMsg = new Discord.MessageEmbed()
+      // .setColor('#0099ff')
+      // .setTitle(`Resources for your ${meetingType} meeting`)
+      // .addField('Resources', meetingLinks["brainstorming"], true)
+      // .setTimestamp();
+
+
+      // message.guild.channels.cache.find(channel => channel.name === `${meetingType}`).send(listOfLinksMsg);
+
 
       search.json(params, callback);      
 
