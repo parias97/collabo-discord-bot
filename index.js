@@ -58,6 +58,9 @@ client.on("message", async message => {
 
     for(let i = 0; i < args.length; i++){
       meetingType += args[i];
+      if(i != args.length - 1){
+        meetingType += " ";
+      }
     }
 
     if(meetingType === undefined){
@@ -68,12 +71,12 @@ client.on("message", async message => {
 
       // Check if a channel for meetingType exists, if not create it.
       if(message.guild.channels.cache.find(channel => channel.name === meetingType)){
-        message.channel.send(`Check out the ${meetingType} channel!`);
+        return message.channel.send(`Check out the ${meetingType} channel!`);
       } else {
         await message.guild.channels.create(meetingType, {
           type: 'text'
         });
-        return message.channel.send(`${meetingType} channel has been created!`);
+        message.channel.send(`${meetingType} channel has been created!`);
       }
 
       let params = {
