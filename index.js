@@ -58,9 +58,6 @@ client.on("message", async message => {
 
     for(let i = 0; i < args.length; i++){
       meetingType += args[i];
-      if(i != args.length - 1){
-        meetingType += " ";
-      }
     }
 
     if(meetingType === undefined){
