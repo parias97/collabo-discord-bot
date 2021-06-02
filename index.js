@@ -1,24 +1,27 @@
-const Discord = require('discord.js');
 const GoogleSearchAPI = require('google-search-results-nodejs');
 const search = new GoogleSearchAPI.GoogleSearch();
 const fetch = require("node-fetch");
-const client = new Discord.Client();
 const Profile = require('./models/Profile');
 const ytdl = require('ytdl-core');
 const {connect} = require('mongoose');
+const Youtube = require('simple-youtube-api');
+const Discord = require('discord.js');
+const client = new Discord.Client();
 require('dotenv').config();
+let youtubeAPIKey = process.env.YOUTUBE_API_KEY;
+const youtube = new Youtube(youtubeAPIKey);
 
 const prefix = "!";
 let interests = [];
 let freeTime = [];
 const queue = new Map();
 
-//Hard-coded meeting links for specific meeting types
-const meetingLinks = {
-  happyhour: ["https://kahoot.it/","https://icebreaker.video/"],
-  brainstorming: ["https://miro.com/", "https://figma.com", "https://lucidspark.com/", "https://conceptboard.com/" ],
-  study: ["https://quizlet.com", "https://docs.google.com/", "https://evernote.com/"]
-}
+// TESTING: Hard-coded meeting links for specific meeting types
+// const meetingLinks = {
+//   happyhour: ["https://kahoot.it/","https://icebreaker.video/"],
+//   brainstorming: ["https://miro.com/", "https://figma.com", "https://lucidspark.com/", "https://conceptboard.com/" ],
+//   study: ["https://quizlet.com", "https://docs.google.com/", "https://evernote.com/"]
+// }
 
 const commands = ["resources", "commands", "profile", "motivateme"];
 
@@ -56,7 +59,7 @@ client.on("message", async message => {
     if(meetingType === undefined){
       return message.channel.send("You must enter a type of meeting.");
     } else {
-
+      // TESTING:
       //const links = meetingLinks[meetingType];
 
       // Check if a channel for meetingType exists, if not create it.
@@ -96,17 +99,7 @@ client.on("message", async message => {
           .setTimestamp();
 
         message.guild.channels.cache.find(channel => channel.name === `${meetingType}`).send(listOfLinksMsg);
-
       }
-      // let listOfLinksMsg = new Discord.MessageEmbed()
-      // .setColor('#0099ff')
-      // .setTitle(`Resources for your ${meetingType} meeting`)
-      // .addField('Resources', meetingLinks["brainstorming"], true)
-      // .setTimestamp();
-
-
-      // message.guild.channels.cache.find(channel => channel.name === `${meetingType}`).send(listOfLinksMsg);
-
 
       search.json(params, callback);      
 
@@ -235,6 +228,7 @@ client.on("message", async message => {
 async function execute(message, url, serverQueue){
   const args = [...url];
   const voiceChannel = message.member.voice.channel;
+  let song = '';
 
   if (!voiceChannel){
     return message.channel.send("You need to be in a voice channel to play music!");
@@ -246,13 +240,102 @@ async function execute(message, url, serverQueue){
     return message.channel.send("I need the permissions to join and speak in your voice channel!");
   }
 
-  const songInfo = await ytdl.getInfo(args[0]);
-  console.log(songInfo);
-  const song = {
-    title: songInfo.videoDetails.title,
-    url: songInfo.videoDetails.video_url,
-  };
+  // Source: https://dev.to/galnir/how-to-write-a-music-command-using-the-discord-js-library-462f
+  if (args[0].match(/^(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.+/)) {
+    const url = args[0]
+    try {
+      const songInfo = await ytdl.getInfo(url);
+      song = {
+        title: songInfo.videoDetails.title,
+        url: songInfo.videoDetails.video_url,
+      };
+    } catch (err) {
+      console.error(err);
+      return message.channel.send('Something went wrong, please try again later');
+    }
+  } else {
+    let search = '';
+    // Append all arguments into a string
+    for(let i = 0; i < args.length; i++){
+      search += args[i];
+    }
 
+    try {
+      const videos = await youtube.searchVideos(search, 3);
+      if(videos.length < 3){
+        return message.channel.send(
+          `I had some trouble finding what you were looking for, please try again or be more specific`
+        );
+      }
+
+      const vidNameArr = [];
+
+      for (let i = 0; i < videos.length; i++) {
+        vidNameArr.push(`${i + 1}: ${videos[i].title}`);
+      }
+
+      // Push 'exit' string as it will be an option
+      vidNameArr.push('exit');
+
+      // Create and display an embed message which will present the user the 3 results
+      // so the user can choose his desired result
+      const embed = new Discord.MessageEmbed()
+        .setColor('#0099ff')
+        .setTitle('Choose a song by commenting a number between 1 and 3')
+        .addField('Song 1', vidNameArr[0])
+        .addField('Song 2', vidNameArr[1])
+        .addField('Song 3', vidNameArr[2])
+        .addField('Exit', 'exit'); // user can reply with 'exit' if none matches
+
+      let songEmbed = await message.channel.send({embed});
+
+      try {
+        // Wait for user input for video selection
+        var response = await message.channel.awaitMessages(
+          msg => (msg.content > 0 && msg.content < 4) || msg.content === 'exit',
+          {
+            max: 1,
+            maxProcessed: 1,
+            time: 60000,
+            errors: ['time']
+          }
+        );
+
+        // Assign videoIndex to user's response
+        var videoIndex = parseInt(response.first().content);
+      } catch (err) {
+        console.error(err);
+        songEmbed.delete();
+        return message.channel.send(
+          'Please try again and enter a number between 1 and 3 or exit'
+        );
+      }
+
+      if (response.first().content === 'exit') return songEmbed.delete();
+
+      try {
+        // Get video data from the YouTube API
+        var video = await youtube.getVideoByID(videos[videoIndex - 1].id);
+      } catch (err) {
+        console.error(err);
+        songEmbed.delete();
+        return message.channel.send(
+          'An error has occured when trying to get the video ID from youtube'
+        );
+      }
+
+      song = {
+        title: video.title,
+        url: video.url
+      }
+
+    } catch (err) {
+      console.error(err);
+      return message.channel.send(
+        'Something went wrong with searching the video you requested :('
+      );
+    }
+  }
 
   if(!serverQueue) {
     // Creating the queue contract
