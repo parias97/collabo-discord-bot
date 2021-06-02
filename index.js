@@ -54,7 +54,11 @@ client.on("message", async message => {
   const serverQueue = queue.get(message.guild.id);
 
   if(command === "resources"){
-    const meetingType = args[0];
+    let meetingType = '';
+
+    for(let i = 0; i < args.length; i++){
+      meetingType += args[i];
+    }
 
     if(meetingType === undefined){
       return message.channel.send("You must enter a type of meeting.");
@@ -69,7 +73,7 @@ client.on("message", async message => {
         await message.guild.channels.create(meetingType, {
           type: 'text'
         });
-        message.channel.send(`${meetingType} channel has been created!`);
+        return message.channel.send(`${meetingType} channel has been created!`);
       }
 
       let params = {
@@ -87,7 +91,6 @@ client.on("message", async message => {
       let callback = (data) => {
         let jsonObjects = [...data.organic_results];
         let results = [];
-        console.log("testing")
         for(let i = 0; i < jsonObjects.length; i++){
           results[i] = "[" + jsonObjects[i].title + "](" + jsonObjects[i].link + ")";
         }
