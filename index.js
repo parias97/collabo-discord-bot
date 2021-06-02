@@ -23,7 +23,7 @@ const queue = new Map();
 //   study: ["https://quizlet.com", "https://docs.google.com/", "https://evernote.com/"]
 // }
 
-const commands = ["resources", "commands", "profile", "motivateme"];
+const commands = ["resources", "commands", "profile", "motivateme", "music"];
 
 const createUser = (userName, interests, freeTime)  => {
   return {userName: userName, interests: [...interests], freeTime: [...freeTime]};
@@ -112,7 +112,7 @@ client.on("message", async message => {
         .setTitle("Collabo Commands")
         .addFields(
           { name: 'Commands', value: commands, inline: true },
-          { name: 'Example', value: ['!resources [MEETING_TYPE]', '!commands', '!profile create/get [USERNAME] (only include username if using get command)','!motivateme'], inline: true },
+          { name: 'Example', value: ['!resources [MEETING_TYPE]', '!commands', '!profile create/get [USERNAME] (only include username if using get command)','!motivateme', "!music play [YOUTUBE URL/ARTIST + SONG NAME]"], inline: true },
         )
         .setTimestamp();
 
